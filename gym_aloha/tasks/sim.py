@@ -2,6 +2,7 @@ import collections
 
 import numpy as np
 from dm_control.suite import base
+import random
 
 from gym_aloha.constants import (
     START_ARM_POSE,
@@ -90,8 +91,8 @@ class BimanualViperXTask(base.Task):
         obs["env_state"] = self.get_env_state(physics)
         obs["images"] = {}
         obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
-        obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
-        obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
+        obs["images"]["left_wrist"] = physics.render(height=480, width=640, camera_id="left_wrist")
+        obs["images"]["right_wrist"] = physics.render(height=480, width=640, camera_id="right_wrist")
 
         return obs
 
@@ -148,6 +149,78 @@ class TransferCubeTask(BimanualViperXTask):
             reward = 4
         return reward
 
+class HackathonTask(BimanualViperXTask):
+    def __init__(self, random=None):
+        super().__init__(random=random)
+        self.max_reward = 1
+        self.object_scale = 1.0
+        self.shape_weights = [1, 0, 0]
+        self.object_color = [1, 0, 0, 1]
+
+    def initialize_episode(self, physics):
+        """Sets the state of the environment at the start of each episode."""
+        # TODO Notice: this function does not randomize the env configuration. Instead, set BOX_POSE from outside
+        # reset qpos, control and box position
+        with physics.reset_context():
+            physics.named.data.qpos[:16] = START_ARM_POSE
+            np.copyto(physics.data.ctrl, START_ARM_POSE)
+            assert BOX_POSE[0] is not None
+            physics.named.data.qpos[-7:] = BOX_POSE[0]
+
+            geom_ids = {
+                physics.model.name2id('small_box', "geom"),
+                physics.model.name2id('small_cylinder', "geom"),
+                physics.model.name2id('small_sphere', "geom")
+            }
+
+            for i in geom_ids:
+                physics.model.geom_size[i] = 0.00001 * np.array([1, 1, 1])
+            
+            # randomize size
+            geom_id = random.choices(list(geom_ids),   weights=self.shape_weights, k=1)
+
+            # update size
+            new_size = np.array([1, 1, 1]) * self.object_scale * 0.02
+            physics.model.geom_size[geom_id] = new_size
+
+            # update color
+            physics.model.geom_rgba[geom_id] = self.object_color
+
+        super().initialize_episode(physics)
+
+    @staticmethod
+    def get_env_state(physics):
+        env_state = physics.data.qpos.copy()[16:]
+        return env_state
+
+    def get_reward(self, physics):
+        # return whether left gripper is holding the box
+        all_contact_pairs = []
+        for i_contact in range(physics.data.ncon):
+            id_geom_1 = physics.data.contact[i_contact].geom1
+            id_geom_2 = physics.data.contact[i_contact].geom2
+            name_geom_1 = physics.model.id2name(id_geom_1, "geom")
+            name_geom_2 = physics.model.id2name(id_geom_2, "geom")
+            contact_pair = (name_geom_1, name_geom_2)
+            all_contact_pairs.append(contact_pair)
+
+        # touch_left_gripper = ("red_box", "vx300s_left/10_left_gripper_finger") in all_contact_pairs
+        box_touch_right_gripper = ("small_box", "vx300s_right/10_right_gripper_finger") in all_contact_pairs
+        cylinder_touch_right_gripper = ("small_cylinder", "vx300s_right/10_right_gripper_finger") in all_contact_pairs
+        sphere_touch_right_gripper = ("small_sphere", "vx300s_right/10_right_gripper_finger") in all_contact_pairs
+        touch_right_gripper = box_touch_right_gripper or cylinder_touch_right_gripper or sphere_touch_right_gripper
+
+        box_touch_bottom = ("small_box", "target_bottom") in all_contact_pairs
+        cylinder_touch_bottom = ("small_cylinder", "target_bottom") in all_contact_pairs
+        sphere_touch_bottom = ("small_sphere", "target_bottom") in all_contact_pairs
+        touch_bottom = box_touch_bottom or cylinder_touch_bottom or sphere_touch_bottom
+
+        reward = 0
+        if touch_right_gripper:
+            reward = 1
+        if touch_bottom:
+            reward = 4
+        return reward
 
 class InsertionTask(BimanualViperXTask):
     def __init__(self, random=None):

@@ -1,0 +1,51 @@
+<mujocoinclude>
+<!--    <option timestep='0.0025' iterations="50" tolerance="1e-10" solver="Newton" jacobian="dense" cone="elliptic"/>-->
+
+    <visual>
+        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+        <rgba haze="0.15 0.25 0.35 1"/>
+        <global azimuth="90" elevation="-20"/>
+        <quality shadowsize="8192"/>
+    </visual>
+
+    <asset>
+        <mesh file="mobile_aloha_lower.stl"/>
+        <mesh file="tabletop.stl" name="tabletop" scale="0.001 0.001 0.001"/>
+
+        <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+
+        <texture type="2d" file="light-wood.png"/>
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+        <material name="table" texture="light-wood"/>
+        <material name="metal" rgba="0.517 0.529 0.537 1"/>
+    </asset>
+
+    <default>
+        <default class="visual">
+            <geom type="mesh" contype="0" conaffinity="0" mass="0" group="2" material="metal"/>
+        </default>
+    </default>
+
+    <worldbody>
+
+        <geom name="floor" size="2 2 0.05" type="plane" material="groundplane" pos="0 0 0"/>
+        <site name="worldref" pos="0 0 0"/>
+        <body name="table" pos="1 0 1.05" quat="1 0 0 1">
+            <geom solimp="2 1 0.01" solref="0.01 1" group="1" mesh="tabletop" material="table" pos="0 0 0" type="mesh" conaffinity="1" contype="1" name="table"/>
+        </body>
+        <body name="midair" pos="0 .6 0.2">
+            <site pos="0 0 0" size="0.01" type="sphere" name="midair" rgba="1 0 0 0"/>
+        </body>
+
+        <geom mesh="mobile_aloha_lower" class="visual" pos="0.2 0 0" quat="1 0 0 0"/>
+
+        <camera name="debug" pos="1 0 2" fovy="78" mode="targetbody"/>
+        <camera name="top" pos="0.4 0 1.3" euler="0 -1.1 -1.57" fovy="87"/>
+
+    </worldbody>
+
+
+
+</mujocoinclude>

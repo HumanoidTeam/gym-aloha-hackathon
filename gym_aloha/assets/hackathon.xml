@@ -1,0 +1,66 @@
+<mujoco>
+    <include file="scene_mobile.xml"/>
+    <include file="vx300s_dependencies.xml"/>
+
+    <worldbody>
+        <light pos="0 0 10" dir="0 0 -1" directional="true" ambient="0.1 0.1 0.1" diffuse="0.5 0.5 0.5" specular="0.3 0.3 0.3"/>
+
+        <include file="vx300s_left_mobile.xml" />
+        <include file="vx300s_right_mobile.xml" />
+
+        <body name="target_box" pos="1 0.2 1.05" quat="1 0 0 0">
+            <!-- <joint name="box_joint" type="free" frictionloss="0.002" /> -->
+            <!-- <inertial pos="0 0 0" mass="0.02" diaginertia="0.02 0.02 0.02" />     -->
+            <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0  0.125 0.05"  size="0.125 0.002 0.05"   material="metal" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0 -0.125 0.05"  size="0.125 0.002 0.05"   material="metal" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0.125  0 0.05"  size="0.002 0.125 0.05"   material="metal" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="-0.125 0 0.05"  size="0.002 0.125 0.05"   material="metal" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" type="box" name="target_bottom" pos="0     0 0.001"  size="0.125 0.125 0.002"  material="metal" conaffinity="1" contype="1"/>
+        </body>
+
+        <body name="object" pos="1 -0.343 1.07">
+            <joint name="object_joint" type="free" frictionloss="0.01" />
+            <inertial pos="0 0 0" mass="0.002" diaginertia="0.002 0.002 0.002" />
+            <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="box" name="small_box" rgba="1 0 0 1" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="cylinder" friction="10 10 10" name="small_cylinder" rgba="1 0 0 1" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="sphere" name="small_sphere" rgba="1 0 0 1" conaffinity="1" contype="1"/>
+            <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="sphere" name="transparent_sphere" rgba="0 0 0 0" conaffinity="1" contype="1"/>
+        </body>
+
+        <!-- <body name="cylinder" pos="1.1 -0.08 1.03">
+            <joint name="object_joint" type="free" frictionloss="0.03" />
+            <inertial pos="0 0 0" mass="0.05" diaginertia="0.002 0.002 0.002" />
+            <geom condim="4" solimp="2 1 0.01" solref="0.01 1" friction="1 0.005 0.0001" pos="0 0 0" size="0.02 0.02 0.02" type="cylinder" name="cylinder" rgba="1 0 0 1" />
+        </body> -->
+
+    </worldbody>
+
+    <actuator>
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_left/waist" kp="800"  user="1" forcelimited="true" forcerange="-150 150"/>
+        <position ctrllimited="true" ctrlrange="-1.85005 1.25664" joint="vx300s_left/shoulder" kp="1600"  user="1" forcelimited="true" forcerange="-300 300"/>
+        <position ctrllimited="true" ctrlrange="-1.76278 1.6057" joint="vx300s_left/elbow" kp="800"  user="1" forcelimited="true" forcerange="-100 100"/>
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_left/forearm_roll" kp="10"  user="1" forcelimited="true" forcerange="-100 100"/>
+        <position ctrllimited="true" ctrlrange="-1.8675 2.23402" joint="vx300s_left/wrist_angle" kp="50"  user="1"/>
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_left/wrist_rotate" kp="20"  user="1"/>
+        <position ctrllimited="true" ctrlrange="0.021 0.057" joint="vx300s_left/left_finger" kp="200"  user="1"/>
+        <position ctrllimited="true" ctrlrange="-0.057 -0.021" joint="vx300s_left/right_finger" kp="200"  user="1"/>
+
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_right/waist" kp="800"  user="1" forcelimited="true" forcerange="-150 150"/>
+        <position ctrllimited="true" ctrlrange="-1.85005 1.25664" joint="vx300s_right/shoulder" kp="1600"  user="1" forcelimited="true" forcerange="-300 300"/>
+        <position ctrllimited="true" ctrlrange="-1.76278 1.6057" joint="vx300s_right/elbow" kp="800"  user="1" forcelimited="true" forcerange="-100 100"/>
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_right/forearm_roll" kp="10"  user="1" forcelimited="true" forcerange="-100 100"/>
+        <position ctrllimited="true" ctrlrange="-1.8675 2.23402" joint="vx300s_right/wrist_angle" kp="50"  user="1"/>
+        <position ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="vx300s_right/wrist_rotate" kp="20"  user="1"/>
+        <position ctrllimited="true" ctrlrange="0.021 0.057" joint="vx300s_right/left_finger" kp="200"  user="1"/>
+        <position ctrllimited="true" ctrlrange="-0.057 -0.021" joint="vx300s_right/right_finger" kp="200"  user="1"/>
+
+    </actuator>
+
+    <keyframe>
+        <key qpos="0 -0.96 1.16 0 -0.3 0 0.024 -0.024  0 -0.96 1.16 0 -0.3 0 0.024 -0.024  
+        0 0 0 0 0 0 0"
+        />
+    </keyframe>
+
+
+</mujoco>

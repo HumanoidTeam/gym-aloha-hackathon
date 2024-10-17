@@ -14,6 +14,18 @@ def sample_box_pose(seed=None):
     cube_quat = np.array([1, 0, 0, 0])
     return np.concatenate([cube_position, cube_quat])
 
+def hackathon_box_pose(seed=None):
+    x_range = [ 0.9,  1.3]
+    y_range = [-0.1, -0.3]
+    z_range = [ 1.071, 1.071]
+
+    rng = np.random.RandomState(seed)
+
+    ranges = np.vstack([x_range, y_range, z_range])
+    cube_position = rng.uniform(ranges[:, 0], ranges[:, 1])
+
+    cube_quat = np.array([1, 0, 0, 0])
+    return np.concatenate([cube_position, cube_quat])
 
 def sample_insertion_pose(seed=None):
     # Peg

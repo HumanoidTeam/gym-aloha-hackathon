@@ -3,6 +3,7 @@ import numpy as np
 from dm_control import mujoco
 from dm_control.rl import control
 from gymnasium import spaces
+import random
 
 from gym_aloha.constants import (
     ACTIONS,
@@ -10,12 +11,13 @@ from gym_aloha.constants import (
     DT,
     JOINTS,
 )
-from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask
+from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, HackathonTask
 from gym_aloha.tasks.sim_end_effector import (
     InsertionEndEffectorTask,
     TransferCubeEndEffectorTask,
+    HackathonEndEffectorTask
 )
-from gym_aloha.utils import sample_box_pose, sample_insertion_pose
+from gym_aloha.utils import sample_box_pose, sample_insertion_pose, hackathon_box_pose
 
 
 class AlohaEnv(gym.Env):
@@ -58,6 +60,18 @@ class AlohaEnv(gym.Env):
                         high=255,
                         shape=(self.observation_height, self.observation_width, 3),
                         dtype=np.uint8,
+                    ),
+                    "left_wrist": spaces.Box(
+                        low=0,
+                        high=255,
+                        shape=(self.observation_height, self.observation_width, 3),
+                        dtype=np.uint8,
+                    ),
+                    "right_wrist": spaces.Box(
+                        low=0,
+                        high=255,
+                        shape=(self.observation_height, self.observation_width, 3),
+                        dtype=np.uint8,
                     )
                 }
             )
@@ -67,6 +81,18 @@ class AlohaEnv(gym.Env):
                     "pixels": spaces.Dict(
                         {
                             "top": spaces.Box(
+                                low=0,
+                                high=255,
+                                shape=(self.observation_height, self.observation_width, 3),
+                                dtype=np.uint8,
+                            ),
+                            "left_wrist": spaces.Box(
+                                low=0,
+                                high=255,
+                                shape=(self.observation_height, self.observation_width, 3),
+                                dtype=np.uint8,
+                            ),
+                            "right_wrist": spaces.Box(
                                 low=0,
                                 high=255,
                                 shape=(self.observation_height, self.observation_width, 3),
@@ -102,8 +128,11 @@ class AlohaEnv(gym.Env):
         # else:
         #     raise ValueError(mode)
         # TODO(rcadene): render and visualizer several cameras (e.g. angle, front_close)
-        image = self._env.physics.render(height=height, width=width, camera_id="top")
-        return image
+        images = {}
+        for cam_id in ["top", "left_wrist", "right_wrist"]:
+            image = self._env.physics.render(height=height, width=width, camera_id=cam_id)
+            images[cam_id] = image
+        return images
 
     def _make_env_task(self, task_name):
         # time limit is controlled by StepCounter in env factory
@@ -117,6 +146,10 @@ class AlohaEnv(gym.Env):
             xml_path = ASSETS_DIR / "bimanual_viperx_insertion.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = InsertionTask()
+        elif "hackathon" in task_name:
+            xml_path = ASSETS_DIR / "hackathon.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = HackathonTask()
         elif "end_effector_transfer_cube" in task_name:
             raise NotImplementedError()
             xml_path = ASSETS_DIR / "bimanual_viperx_end_effector_transfer_cube.xml"
@@ -139,10 +172,18 @@ class AlohaEnv(gym.Env):
         if self.obs_type == "state":
             raise NotImplementedError()
         elif self.obs_type == "pixels":
-            obs = {"top": raw_obs["images"]["top"].copy()}
+            obs = {
+                "top": raw_obs["images"]["top"].copy(),
+                "left_wrist": raw_obs["images"]["left_wrist"].copy(),
+                "right_wrist": raw_obs["images"]["right_wrist"].copy(),
+            }
         elif self.obs_type == "pixels_agent_pos":
             obs = {
-                "pixels": {"top": raw_obs["images"]["top"].copy()},
+                "pixels": {
+                    "top": raw_obs["images"]["top"].copy(),
+                    "left_wrist": raw_obs["images"]["left_wrist"].copy(),
+                    "right_wrist": raw_obs["images"]["right_wrist"].copy(),
+                },
                 "agent_pos": raw_obs["qpos"],
             }
         return obs
@@ -160,8 +201,24 @@ class AlohaEnv(gym.Env):
             BOX_POSE[0] = sample_box_pose(seed)  # used in sim reset
         elif "insertion" in self.task:
             BOX_POSE[0] = np.concatenate(sample_insertion_pose(seed))  # used in sim reset
+        elif "hackathon" in self.task:
+            BOX_POSE[0] = hackathon_box_pose(seed)  # used in sim reset
         else:
             raise ValueError(self.task)
+
+        self._env.task.object_scale = 1.0 
+        self._env.task.shape_weights = [1/3., 1/3., 1/3.]
+        self._env.task.object_color = [random.random(), random.random(), random.random(), 1]
+        
+        if isinstance(options, dict):
+            if "scale" in options:
+                self._env.task.object_scale = options["scale"]
+            if "weights" in options:
+                self._env.task.shape_weights = options["weights"]
+            if "color" in options:   
+                # Check if any of the color values are -1
+                if not any(c == -1 for c in options["color"]):
+                    self._env.task.object_color = options["color"] 
 
         raw_obs = self._env.reset()
 

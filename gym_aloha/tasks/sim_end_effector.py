@@ -10,7 +10,7 @@ from gym_aloha.constants import (
     normalize_puppet_gripper_velocity,
     unnormalize_puppet_gripper_position,
 )
-from gym_aloha.utils import sample_box_pose, sample_insertion_pose
+from gym_aloha.utils import sample_box_pose, sample_insertion_pose, hackathon_box_pose
 
 """
 Environment for simulated robot bi-manual manipulation, with end-effector control.
@@ -117,9 +117,12 @@ class BimanualViperXEndEffectorTask(base.Task):
         obs["qvel"] = self.get_qvel(physics)
         obs["env_state"] = self.get_env_state(physics)
         obs["images"] = {}
-        obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
-        obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
-        obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
+        # obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
+        obs["images"]["top"] = physics.render(height=480, width=640, camera_id="right_wrist")
+        obs["images"]["left_wrist"] = physics.render(height=480, width=640, camera_id="left_wrist")
+        obs["images"]["right_wrist"] = physics.render(height=480, width=640, camera_id="right_wrist")
+        #obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
+        #obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
         # used in scripted policy to obtain starting pose
         obs["mocap_pose_left"] = np.concatenate(
             [physics.data.mocap_pos[0], physics.data.mocap_quat[0]]
@@ -147,6 +150,53 @@ class TransferCubeEndEffectorTask(BimanualViperXEndEffectorTask):
         # randomize box position
         cube_pose = sample_box_pose()
         box_start_idx = physics.model.name2id("red_box_joint", "joint")
+        np.copyto(physics.data.qpos[box_start_idx : box_start_idx + 7], cube_pose)
+        # print(f"randomized cube position to {cube_position}")
+
+        super().initialize_episode(physics)
+
+    @staticmethod
+    def get_env_state(physics):
+        env_state = physics.data.qpos.copy()[16:]
+        return env_state
+
+    def get_reward(self, physics):
+        # return whether left gripper is holding the box
+        all_contact_pairs = []
+        for i_contact in range(physics.data.ncon):
+            id_geom_1 = physics.data.contact[i_contact].geom1
+            id_geom_2 = physics.data.contact[i_contact].geom2
+            name_geom_1 = physics.model.id2name(id_geom_1, "geom")
+            name_geom_2 = physics.model.id2name(id_geom_2, "geom")
+            contact_pair = (name_geom_1, name_geom_2)
+            all_contact_pairs.append(contact_pair)
+
+        touch_left_gripper = ("red_box", "vx300s_left/10_left_gripper_finger") in all_contact_pairs
+        touch_right_gripper = ("red_box", "vx300s_right/10_right_gripper_finger") in all_contact_pairs
+        touch_table = ("red_box", "table") in all_contact_pairs
+
+        reward = 0
+        if touch_right_gripper:
+            reward = 1
+        if touch_right_gripper and not touch_table:  # lifted
+            reward = 2
+        if touch_left_gripper:  # attempted transfer
+            reward = 3
+        if touch_left_gripper and not touch_table:  # successful transfer
+            reward = 4
+        return reward
+
+class HackathonEndEffectorTask(BimanualViperXEndEffectorTask):
+    def __init__(self, random=None):
+        super().__init__(random=random)
+        self.max_reward = 4
+
+    def initialize_episode(self, physics):
+        """Sets the state of the environment at the start of each episode."""
+        self.initialize_robots(physics)
+        # randomize box position
+        cube_pose = hackathon_box_pose()
+        box_start_idx = physics.model.name2id("object_joint", "joint")
         np.copyto(physics.data.qpos[box_start_idx : box_start_idx + 7], cube_pose)
         # print(f"randomized cube position to {cube_position}")
 
