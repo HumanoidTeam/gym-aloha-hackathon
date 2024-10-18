@@ -9,8 +9,6 @@
         <include file="vx300s_right_mobile.xml" />
 
         <body name="target_box" pos="1 0.2 1.05" quat="1 0 0 0">
-            <!-- <joint name="box_joint" type="free" frictionloss="0.002" /> -->
-            <!-- <inertial pos="0 0 0" mass="0.02" diaginertia="0.02 0.02 0.02" />     -->
             <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0  0.125 0.05"  size="0.125 0.002 0.05"   material="metal" conaffinity="1" contype="1"/>
             <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0 -0.125 0.05"  size="0.125 0.002 0.05"   material="metal" conaffinity="1" contype="1"/>
             <geom solimp="2 1 0.01" solref="0.01 1" type="box" pos="0.125  0 0.05"  size="0.002 0.125 0.05"   material="metal" conaffinity="1" contype="1"/>
@@ -19,20 +17,13 @@
         </body>
 
         <body name="object" pos="1 -0.343 1.07">
-            <joint name="object_joint" type="free" frictionloss="0.01" />
-            <inertial pos="0 0 0" mass="0.002" diaginertia="0.002 0.002 0.002" />
+            <joint name="object_joint" type="free" frictionloss="0.0001" />
+            <inertial pos="0 0 0" mass="0.01" diaginertia="0.000001 0.000001 0.000001" />
             <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="box" name="small_box" rgba="1 0 0 1" conaffinity="1" contype="1"/>
             <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="cylinder" friction="10 10 10" name="small_cylinder" rgba="1 0 0 1" conaffinity="1" contype="1"/>
             <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="sphere" name="small_sphere" rgba="1 0 0 1" conaffinity="1" contype="1"/>
             <geom solimp="2 1 0.01" solref="0.01 1" pos="0 0 0" size="0.02 0.02 0.02" type="sphere" name="transparent_sphere" rgba="0 0 0 0" conaffinity="1" contype="1"/>
         </body>
-
-        <!-- <body name="cylinder" pos="1.1 -0.08 1.03">
-            <joint name="object_joint" type="free" frictionloss="0.03" />
-            <inertial pos="0 0 0" mass="0.05" diaginertia="0.002 0.002 0.002" />
-            <geom condim="4" solimp="2 1 0.01" solref="0.01 1" friction="1 0.005 0.0001" pos="0 0 0" size="0.02 0.02 0.02" type="cylinder" name="cylinder" rgba="1 0 0 1" />
-        </body> -->
-
     </worldbody>
 
     <actuator>
